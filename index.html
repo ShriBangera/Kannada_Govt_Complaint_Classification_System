@@ -1,79 +1,299 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Kannada Grievance System</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ಜನಧ್ವನಿ ಸ್ಪಂದನ</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: Arial;
-            background: #f5f5f5;
-            text-align: center;
-            margin-top: 100px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: url('bg.png') center/cover no-repeat fixed;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 500px;
+            padding: 20px;
         }
 
         .box {
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            width: 400px;
-            margin: auto;
-            box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 50px 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            animation: slideIn 0.6s ease-out;
         }
 
-        input {
-            width: 90%;
-            padding: 10px;
-            margin: 10px 0;
-            font-size: 16px;
+        .box:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.4);
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h2 {
+            color: #667eea;
+            margin-bottom: 30px;
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 12px 15px;
+            font-size: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        input[type="text"]:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        input[type="text"]::placeholder, textarea::placeholder {
+            color: #999;
         }
 
         button {
-            padding: 10px 20px;
+            width: 100%;
+            padding: 14px 20px;
             font-size: 16px;
-            background: #007bff;
+            font-weight: 600;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
-            border-radius: 5px;
+            border-radius: 10px;
             cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
         }
 
         button:hover {
-            background: #0056b3;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .result-container {
+            margin-top: 30px;
+            min-height: 10px;
         }
 
         #result {
-            margin-top: 20px;
             font-size: 18px;
-            font-weight: bold;
+            font-weight: 600;
+            color: #667eea;
+            padding: 15px;
+            background: rgba(102, 126, 234, 0.1);
+            border-left: 4px solid #667eea;
+            border-radius: 8px;
+            animation: fadeIn 0.4s ease-out;
+            display: none;
+        }
+
+        #result.show {
+            display: block;
         }
 
         .confidence {
-            color: green;
+            color: #764ba2;
+            margin-top: 12px;
+            font-size: 16px;
+            padding: 12px;
+            background: rgba(118, 75, 162, 0.1);
+            border-left: 4px solid #764ba2;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .confidence.show {
+            display: block;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .error {
+            background: rgba(220, 53, 69, 0.1);
+            border-left-color: #dc3545;
+            color: #dc3545;
+        }
+
+        .success {
+            background: rgba(40, 167, 69, 0.1);
+            border-left-color: #28a745;
+            color: #28a745;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #667eea;
+            opacity: 0.6;
+            animation: pulse 1.5s infinite;
+            margin-left: 5px;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .info-text {
+            font-size: 12px;
+            color: #999;
+            margin-top: 8px;
+            text-align: left;
+        }
+
+        .character-count {
+            font-size: 12px;
+            color: #999;
             margin-top: 5px;
+            text-align: right;
         }
     </style>
 </head>
 
 <body>
 
-<div class="box">
-    <h2>📝 Kannada Grievance System</h2>
+<div class="container">
+    <div class="box">
+        <h2>ಜನಧ್ವನಿ ಸ್ಪಂದನ</h2>
 
-    <input type="text" id="text" placeholder="Enter complaint (e.g. ನೀರು ಸಮಸ್ಯೆ ಇದೆ)">
-    <br>
-    <button onclick="send()">Submit</button>
+        <div class="form-group">
+            <label for="text">ನಿಮ್ಮ ದೂರನ್ನು ನಮೂದಿಸಿ</label>
+            <textarea 
+                id="text" 
+                placeholder="ಉದಾಹರಣೆ: ನೀರು ಸಮಸ್ಯೆ ಇದೆ "
+            ></textarea>
+            <div class="character-count"><span id="charCount">0</span>/500 ಅಕ್ಷರಗಳು</div>
+            <div class="info-text">💡 ಸಲಹೆ: ಉತ್ತಮ ವರ್ಗೀಕರಣಕ್ಕಾಗಿ ವಿವರವಾದ ದೂರನ್ನು ಒದಗಿಸಿ</div>
+        </div>
 
-    <div id="result"></div>
-    <div id="confidence" class="confidence"></div>
+        <button id="submitBtn" onclick="send()">ದೂರು ಸಲ್ಲಿಸಿ</button>
+
+        <div class="result-container">
+            <div id="result"></div>
+            <div id="confidence" class="confidence"></div>
+        </div>
+    </div>
 </div>
 
 <script>
+const textInput = document.getElementById("text");
+const submitBtn = document.getElementById("submitBtn");
+const resultDiv = document.getElementById("result");
+const confidenceDiv = document.getElementById("confidence");
+const charCountSpan = document.getElementById("charCount");
+
+textInput.addEventListener("input", function() {
+    charCountSpan.textContent = this.value.length;
+    if (this.value.length > 500) {
+        this.value = this.value.substring(0, 500);
+        charCountSpan.textContent = 500;
+    }
+});
+
+textInput.addEventListener("keypress", function(event) {
+    if (event.key === "Enter" && event.ctrlKey) {
+        send();
+    }
+});
+
 function send() {
-    let text = document.getElementById("text").value;
+    let text = textInput.value.trim();
 
     if (!text) {
-        alert("Please enter a complaint");
+        showError("⚠️ ದಯವಿಟ್ಟು ದೂರನ್ನು ನಮೂದಿಸಿ");
         return;
     }
+
+    if (text.length < 5) {
+        showError("⚠️ ದೂರು ಕನಿಷ್ಠ 5 ಅಕ್ಷರಗಳನ್ನು ಹೊಂದಿರಬೇಕು.");
+        return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = 'Processing<span class="loading"></span>';
+    resultDiv.classList.remove("show", "error", "success");
+    confidenceDiv.classList.remove("show");
 
     fetch("http://127.0.0.1:5000/predict", {
         method: "POST",
@@ -82,12 +302,32 @@ function send() {
     })
     .then(res => res.json())
     .then(data => {
-        document.getElementById("result").innerText = "📌 Category: " + data.category;
-        document.getElementById("confidence").innerText = "✅ Confidence: " + data.confidence + "%";
+        if (data.error) {
+            showError("❌ " + data.error);
+        } else {
+            showSuccess("📌 Category: <strong>" + data.category + "</strong>");
+            confidenceDiv.innerHTML = "✅ Confidence: <strong>" + data.confidence + "%</strong>";
+            confidenceDiv.classList.add("show");
+        }
     })
     .catch(err => {
-        document.getElementById("result").innerText = "❌ Error connecting to server";
+        showError("❌ Error connecting to server. Please ensure the backend is running.");
+    })
+    .finally(() => {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = 'ದೂರು ಸಲ್ಲಿಸಿ';
     });
+}
+
+function showError(message) {
+    resultDiv.innerHTML = message;
+    resultDiv.classList.add("show", "error");
+    confidenceDiv.classList.remove("show");
+}
+
+function showSuccess(message) {
+    resultDiv.innerHTML = message;
+    resultDiv.classList.add("show", "success");
 }
 </script>
 
