@@ -1,0 +1,119 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Employee Dashboard</title>
+  <style>
+    body { font-family: Arial, sans-serif; background:#f5f7fb; padding:20px }
+    .login, .dashboard { max-width:900px; margin:0 auto; background:white; padding:20px; border-radius:8px; box-shadow:0 6px 20px rgba(0,0,0,0.08)}
+    .cols { display:flex; gap:16px }
+    .col { flex:1 }
+    .card { background:#fff; border:1px solid #eee; padding:12px; border-radius:6px; margin-bottom:12px }
+    .meta { font-size:12px; color:#666 }
+    button { padding:8px 10px; margin-right:6px }
+  </style>
+</head>
+<body>
+<div class="login" id="loginBox">
+  <h2>Employee Login</h2>
+  <label>Email</label><br>
+  <input id="email" type="text"><br>
+  <label>Password</label><br>
+  <input id="password" type="password"><br><br>
+  <button onclick="login()">Login</button>
+  <div id="loginError" style="color:red;margin-top:8px"></div>
+</div>
+
+<div class="dashboard" id="dashboard" style="display:none">
+  <h2>Welcome, <span id="empName"></span> — <small id="empDept"></small></h2>
+  <div style="margin-bottom:12px">
+    <button onclick="loadComplaints('Pending')">Pending</button>
+    <button onclick="loadComplaints('Assigned')">Assigned</button>
+    <button onclick="loadComplaints('In Progress')">In Progress</button>
+    <button onclick="loadComplaints('Resolved')">Resolved</button>
+    <button onclick="loadComplaints('Rejected')">Rejected</button>
+  </div>
+
+  <div class="cols">
+    <div class="col">
+      <h3>Complaints</h3>
+      <div id="complaintsList"></div>
+    </div>
+    <div class="col">
+      <h3>Details</h3>
+      <div id="details"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = 'http://127.0.0.1:5000';
+let EMP = null;
+let currentStatus = 'Pending';
+
+function login(){
+  const email = document.getElementById('email').value;
+  const password = document.getElementById('password').value;
+  fetch(API + '/employee/login', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({email,password})
+  }).then(r=>r.json()).then(data=>{
+    if(data.error){ document.getElementById('loginError').textContent = data.error; return; }
+    EMP = data;
+    document.getElementById('empName').textContent = data.name;
+    document.getElementById('empDept').textContent = data.department;
+    document.getElementById('loginBox').style.display='none';
+    document.getElementById('dashboard').style.display='block';
+    loadComplaints('Pending');
+  }).catch(e=>{ document.getElementById('loginError').textContent = 'Server error'; });
+}
+
+function loadComplaints(status){
+  if(!EMP) return;
+  currentStatus = status;
+  fetch(API + '/employee/' + EMP.id + '/complaints?status=' + encodeURIComponent(status))
+    .then(r=>r.json()).then(data=>{
+      const list = document.getElementById('complaintsList'); list.innerHTML='';
+      (data.complaints||[]).forEach(c=>{
+        const div = document.createElement('div'); div.className='card';
+        div.innerHTML = `<div class="meta">#${c.id} • ${c.citizen_name || 'Anonymous'} • ${c.predicted_department}</div>
+                         <div style="margin-top:8px">${c.complaint_text}</div>
+                         <div style="margin-top:8px"><strong>Status:</strong> ${c.status}</div>
+                         <div style="margin-top:8px">` + actionButtons(c) + `</div>`;
+        div.addEventListener('click', ()=> showDetails(c));
+        list.appendChild(div);
+      });
+    });
+}
+
+function actionButtons(c){
+  // Accept, Start Work, Resolve, Reject
+  return `<button onclick="action(event, ${c.id}, 'accept')">Accept</button>` +
+         `<button onclick="action(event, ${c.id}, 'start')">Start Work</button>` +
+         `<button onclick="action(event, ${c.id}, 'resolve')">Resolve</button>` +
+         `<button onclick="action(event, ${c.id}, 'reject')">Reject</button>`;
+}
+
+function action(e, id, act){
+  e.stopPropagation();
+  fetch(API + '/complaint/' + id + '/action', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({action: act, employee_id: EMP.id})
+  }).then(r=>r.json()).then(res=>{
+    if(res && res.ok){ loadComplaints(currentStatus); }
+    else alert('Action failed');
+  }).catch(()=> alert('Server error'));
+}
+
+function showDetails(c){
+  const d = document.getElementById('details');
+  d.innerHTML = `<div class="card"><h4>Complaint #${c.id}</h4>
+    <div class="meta">Citizen: ${c.citizen_name || 'Anonymous'}</div>
+    <div style="margin-top:8px">${c.complaint_text}</div>
+    <div style="margin-top:8px"><strong>Confidence:</strong> ${c.confidence}</div>
+    <div style="margin-top:8px"><strong>Status:</strong> ${c.status}</div>
+  </div>`;
+}
+</script>
+</body>
+</html>
