@@ -10,6 +10,7 @@ db_config = {
     'auth_plugin': 'mysql_native_password'
 }
 
+
 def get_connection():
     """Create and return a database connection"""
     try:
@@ -30,29 +31,37 @@ def get_connection():
                 return None
         return None
 
+
 def create_tables():
     """Create all required tables"""
-    # Allow get_connection to fallback to connecting without a database
     connection = get_connection()
     if connection is None:
         return False
-    
+
     cursor = connection.cursor()
-    
+
     try:
-        # Create database if it doesn't exist and switch to it
         cursor.execute("CREATE DATABASE IF NOT EXISTS kannada_complaints")
         cursor.execute("USE kannada_complaints")
-        
-        # Create Departments Table
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS citizens (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                name VARCHAR(100) NOT NULL,
+                phone VARCHAR(20),
+                email VARCHAR(100) UNIQUE,
+                password VARCHAR(255) NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS departments (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 department_name VARCHAR(50) NOT NULL UNIQUE
             )
         """)
-        
-        # Create Employees Table
+
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS employees (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -64,8 +73,7 @@ def create_tables():
                 FOREIGN KEY (department) REFERENCES departments(department_name)
             )
         """)
-        
-        # Create Complaints Table
+
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS complaints (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -77,14 +85,15 @@ def create_tables():
                 status VARCHAR(30) DEFAULT 'Pending',
                 remarks TEXT,
                 assigned_employee_id INT,
+                citizen_id INT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                 FOREIGN KEY (predicted_department) REFERENCES departments(department_name),
-                FOREIGN KEY (assigned_employee_id) REFERENCES employees(id)
+                FOREIGN KEY (assigned_employee_id) REFERENCES employees(id),
+                FOREIGN KEY (citizen_id) REFERENCES citizens(id)
             )
         """)
 
-        # Ensure new complaints columns exist in older schemas
         cursor.execute("SHOW COLUMNS FROM complaints LIKE %s", ('remarks',))
         if cursor.fetchone() is None:
             cursor.execute("ALTER TABLE complaints ADD COLUMN remarks TEXT")
@@ -92,8 +101,12 @@ def create_tables():
         cursor.execute("SHOW COLUMNS FROM complaints LIKE %s", ('updated_at',))
         if cursor.fetchone() is None:
             cursor.execute("ALTER TABLE complaints ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP")
-        
-        # Create Complaint Updates Table
+
+        cursor.execute("SHOW COLUMNS FROM complaints LIKE %s", ('citizen_id',))
+        if cursor.fetchone() is None:
+            cursor.execute("ALTER TABLE complaints ADD COLUMN citizen_id INT")
+            cursor.execute("ALTER TABLE complaints ADD CONSTRAINT fk_complaints_citizen FOREIGN KEY (citizen_id) REFERENCES citizens(id)")
+
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS complaint_updates (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -106,11 +119,11 @@ def create_tables():
                 FOREIGN KEY (updated_by) REFERENCES employees(id)
             )
         """)
-        
+
         connection.commit()
         print("✓ All tables created successfully!")
         return True
-        
+
     except Error as e:
         print(f"Error creating tables: {e}")
         connection.rollback()
@@ -119,11 +132,12 @@ def create_tables():
         cursor.close()
         connection.close()
 
+
 if __name__ == "__main__":
     create_tables()
 
 
-def insert_complaint(complaint_text, predicted_department, confidence, citizen_name=None, phone=None, status='Pending'):
+def insert_complaint(complaint_text, predicted_department, confidence, citizen_name=None, phone=None, citizen_id=None, status='Pending'):
     """Insert a complaint and return the new complaint id, or None on error"""
     connection = get_connection()
     if connection is None:
@@ -132,15 +146,92 @@ def insert_complaint(complaint_text, predicted_department, confidence, citizen_n
     cursor = connection.cursor()
     try:
         cursor.execute("USE kannada_complaints")
-        sql = ("INSERT INTO complaints (citizen_name, phone, complaint_text, predicted_department, confidence, status) "
-               "VALUES (%s, %s, %s, %s, %s, %s)")
-        cursor.execute(sql, (citizen_name, phone, complaint_text, predicted_department, float(confidence), status))
+        sql = ("INSERT INTO complaints (citizen_name, phone, complaint_text, predicted_department, confidence, status, citizen_id) "
+               "VALUES (%s, %s, %s, %s, %s, %s, %s)")
+        cursor.execute(sql, (citizen_name, phone, complaint_text, predicted_department, float(confidence), status, citizen_id))
         connection.commit()
         return cursor.lastrowid
     except Error as e:
         print(f"Error inserting complaint: {e}")
         connection.rollback()
         return None
+    finally:
+        cursor.close()
+        connection.close()
+
+
+def register_citizen(name, phone, email, password):
+    connection = get_connection()
+    if connection is None:
+        return False
+
+    cursor = connection.cursor()
+    try:
+        cursor.execute("USE kannada_complaints")
+        cursor.execute("INSERT INTO citizens (name, phone, email, password) VALUES (%s, %s, %s, %s)", (name, phone, email, password))
+        connection.commit()
+        return True
+    except Error as e:
+        print(f"Error registering citizen: {e}")
+        connection.rollback()
+        return False
+    finally:
+        cursor.close()
+        connection.close()
+
+
+def get_citizen_by_credentials(email, password):
+    connection = get_connection()
+    if connection is None:
+        return None
+
+    cursor = connection.cursor(dictionary=True)
+    try:
+        cursor.execute("USE kannada_complaints")
+        cursor.execute("SELECT * FROM citizens WHERE email = %s AND password = %s LIMIT 1", (email, password))
+        return cursor.fetchone()
+    except Error as e:
+        print(f"Error fetching citizen by credentials: {e}")
+        return None
+    finally:
+        cursor.close()
+        connection.close()
+
+
+def get_citizen_by_id(citizen_id):
+    connection = get_connection()
+    if connection is None:
+        return None
+
+    cursor = connection.cursor(dictionary=True)
+    try:
+        cursor.execute("USE kannada_complaints")
+        cursor.execute("SELECT * FROM citizens WHERE id = %s LIMIT 1", (citizen_id,))
+        return cursor.fetchone()
+    except Error as e:
+        print(f"Error fetching citizen by id: {e}")
+        return None
+    finally:
+        cursor.close()
+        connection.close()
+
+
+def get_citizen_complaints(citizen_id):
+    connection = get_connection()
+    if connection is None:
+        return []
+
+    cursor = connection.cursor(dictionary=True)
+    try:
+        cursor.execute("USE kannada_complaints")
+        cursor.execute(
+            "SELECT id, complaint_text, predicted_department, status, remarks, created_at, updated_at FROM complaints WHERE citizen_id = %s ORDER BY created_at DESC",
+            (citizen_id,)
+        )
+        return cursor.fetchall()
+    except Error as e:
+        print(f"Error fetching citizen complaints: {e}")
+        return []
     finally:
         cursor.close()
         connection.close()

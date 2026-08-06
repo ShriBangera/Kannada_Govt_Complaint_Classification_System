@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Register - Complaint Portal</title>
+    <title>Login - Complaint Portal</title>
     <style>
         body {
             margin: 0;
@@ -20,13 +20,13 @@
         }
         .card {
             width: 100%;
-            max-width: 480px;
+            max-width: 460px;
             background: white;
             border-radius: 16px;
             padding: 24px;
             box-shadow: 0 12px 35px rgba(15, 23, 42, 0.12);
         }
-        h1 { margin-top: 0; }
+        h1, h2 { margin-top: 0; }
         form { display: grid; gap: 12px; }
         input, button { font: inherit; }
         input {
@@ -45,6 +45,18 @@
             background: linear-gradient(135deg, #2563eb, #7c3aed);
             color: white;
         }
+        button.secondary {
+            background: #e5e7eb;
+            color: #111827;
+        }
+        .toggle-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 12px 0;
+            font-size: 14px;
+        }
+        .hidden { display: none; }
         .message { margin-top: 10px; padding: 10px 12px; border-radius: 10px; }
         .message.error { background: #fee2e2; color: #b91c1c; }
         .message.success { background: #dcfce7; color: #166534; }
@@ -54,49 +66,60 @@
 <body>
 <div class="container">
     <div class="card">
-        <h1>Create Citizen Account</h1>
-        <form id="registerForm">
-            <input id="name" type="text" placeholder="Full name" required />
-            <input id="phone" type="text" placeholder="Phone number" required />
-            <input id="email" type="email" placeholder="Email" required />
-            <input id="password" type="password" placeholder="Password" required />
-            <button type="submit">Register</button>
-        </form>
+        <h1>Citizen Login</h1>
+        <p>Use this page to log in as a citizen or switch to employee login.</p>
+
+        <div id="citizenLoginSection">
+            <h2>Citizen Login</h2>
+            <form id="citizenLoginForm">
+                <input id="citizenEmail" type="email" placeholder="Email" required />
+                <input id="citizenPassword" type="password" placeholder="Password" required />
+                <button type="submit">Login as Citizen</button>
+            </form>
+        </div>
+
+        <div class="toggle-row">
+            <span>Need an account?</span>
+            <a href="register.html">Create citizen account</a>
+        </div>
+
+        <button id="switchEmployeeBtn" class="secondary" type="button" onclick="window.location.href='employee_dashboard.html'">Login as Employee</button>
+
         <div id="messageBox"></div>
-        <p style="margin-top: 10px;"><a href="login.html">Already have an account? Login here</a></p>
     </div>
 </div>
 
 <script>
 const API = 'http://127.0.0.1:5000';
+const messageBox = document.getElementById('messageBox');
 
 function showMessage(text, type) {
-    document.getElementById('messageBox').innerHTML = `<div class="message ${type}">${text}</div>`;
+    messageBox.innerHTML = `<div class="message ${type}">${text}</div>`;
 }
 
-document.getElementById('registerForm').addEventListener('submit', function (e) {
+document.getElementById('citizenLoginForm').addEventListener('submit', function (e) {
     e.preventDefault();
-    const name = document.getElementById('name').value.trim();
-    const phone = document.getElementById('phone').value.trim();
-    const email = document.getElementById('email').value.trim();
-    const password = document.getElementById('password').value;
+    const email = document.getElementById('citizenEmail').value.trim();
+    const password = document.getElementById('citizenPassword').value;
 
-    fetch(`${API}/citizen/register`, {
+    fetch(`${API}/citizen/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, phone, email, password })
+        body: JSON.stringify({ email, password })
     })
     .then(res => res.json().then(data => ({ status: res.status, data })))
     .then(result => {
-        if (result.status !== 201) {
-            showMessage(result.data.error || 'Registration failed', 'error');
+        if (result.status !== 200) {
+            showMessage(result.data.error || 'Citizen login failed', 'error');
             return;
         }
-        showMessage('Registration successful. You can now login.', 'success');
-        document.getElementById('registerForm').reset();
+        localStorage.setItem('citizenSession', JSON.stringify(result.data));
+        showMessage('Citizen login successful. You can now use the complaint portal.', 'success');
+        window.location.replace('index.html');
     })
     .catch(() => showMessage('Unable to connect to the server', 'error'));
 });
+
 </script>
 </body>
 </html>

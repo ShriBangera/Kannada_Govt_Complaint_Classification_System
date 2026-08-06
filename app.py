@@ -4,11 +4,17 @@ from flask_cors import CORS
 import pickle
 
 # DB helpers
-from database import insert_complaint, find_employee_for_department, assign_complaint, create_tables
-from database import get_employee_by_credentials, get_employee_by_email, register_employee, get_employee_by_id, get_complaint_by_id, get_complaints_for_department, update_complaint_status, add_complaint_update
+from database import (
+    insert_complaint, find_employee_for_department, assign_complaint, create_tables,
+    get_employee_by_credentials, get_employee_by_email, register_employee, get_employee_by_id,
+    get_complaint_by_id, get_complaints_for_department, update_complaint_status, add_complaint_update,
+    register_citizen, get_citizen_by_credentials, get_citizen_by_id, get_citizen_complaints
+)
 
 app = Flask(__name__)
 CORS(app)
+
+create_tables()
 
 # Load model
 model = pickle.load(open("model.pkl", "rb"))
@@ -23,16 +29,18 @@ def predict():
     try:
         data = request.get_json()
 
-        if 'text' not in data:
+        if not data or 'text' not in data:
             return jsonify({"error": "Missing 'text' field"}), 400
 
         text = data['text']
+        citizen_id = data.get('citizen_id')
+        citizen_name = data.get('citizen_name')
+        phone = data.get('phone')
 
         vec = vectorizer.transform([text])
         category = model.predict(vec)[0]
         confidence = model.predict_proba(vec).max()
 
-        # Map model category to department name
         department_map = {
             "water": "Water Department",
             "road": "Road Department",
@@ -42,13 +50,17 @@ def predict():
         }
 
         predicted_department = department_map.get(category, category)
-
-        # Save to DB
-        complaint_id = insert_complaint(text, predicted_department, float(confidence))
+        complaint_id = insert_complaint(
+            text,
+            predicted_department,
+            float(confidence),
+            citizen_name=citizen_name,
+            phone=phone,
+            citizen_id=citizen_id
+        )
 
         assigned_employee = None
         if complaint_id:
-            # Try to find an employee and assign
             emp = find_employee_for_department(predicted_department)
             if emp and emp.get('id'):
                 success = assign_complaint(complaint_id, emp.get('id'))
@@ -67,6 +79,47 @@ def predict():
         return jsonify(response)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@app.route('/citizen/register', methods=['POST'])
+def citizen_register():
+    data = request.get_json()
+    if not data or 'name' not in data or 'phone' not in data or 'email' not in data or 'password' not in data:
+        return jsonify({'error': 'Missing registration fields'}), 400
+
+    success = register_citizen(data['name'], data['phone'], data['email'], data['password'])
+    if not success:
+        return jsonify({'error': 'Unable to register citizen'}), 500
+
+    return jsonify({'message': 'Citizen registered successfully'}), 201
+
+
+@app.route('/citizen/login', methods=['POST'])
+def citizen_login():
+    data = request.get_json()
+    if not data or 'email' not in data or 'password' not in data:
+        return jsonify({'error': 'Missing credentials'}), 400
+
+    citizen = get_citizen_by_credentials(data['email'], data['password'])
+    if not citizen:
+        return jsonify({'error': 'Invalid email or password'}), 401
+
+    return jsonify({
+        'id': citizen['id'],
+        'name': citizen['name'],
+        'phone': citizen.get('phone'),
+        'email': citizen['email']
+    })
+
+
+@app.route('/citizen/<int:citizen_id>/complaints', methods=['GET'])
+def citizen_complaints(citizen_id):
+    citizen = get_citizen_by_id(citizen_id)
+    if not citizen:
+        return jsonify({'error': 'Citizen not found'}), 404
+
+    complaints = get_citizen_complaints(citizen_id)
+    return jsonify({'complaints': complaints})
 
 
 @app.route('/employee/register', methods=['POST'])

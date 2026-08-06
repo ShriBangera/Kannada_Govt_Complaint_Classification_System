@@ -1,335 +1,174 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ಜನಧ್ವನಿ ಸ್ಪಂದನ</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Citizen Complaint Portal</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { box-sizing: border-box; }
         body {
+            margin: 0;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: url('bg.png') center/cover no-repeat fixed;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            overflow: hidden;
-            position: relative;
+            color: #1f2937;
         }
-
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(255, 255, 255, 0.05);
-            pointer-events: none;
-            z-index: 0;
-        }
-
-        .container {
-            position: relative;
-            z-index: 1;
-            width: 100%;
-            max-width: 500px;
-            padding: 20px;
-        }
-
-        .box {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 50px 40px;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            animation: slideIn 0.6s ease-out;
-        }
-
-        .box:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.4);
-        }
-
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        h2 {
-            color: #667eea;
-            margin-bottom: 30px;
-            font-size: 28px;
-            font-weight: 700;
-            letter-spacing: -0.5px;
-        }
-
-        .form-group {
+        .container { max-width: 1100px; margin: 0 auto; padding: 24px; }
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 10px 35px rgba(15, 23, 42, 0.12);
             margin-bottom: 20px;
         }
-
-        label {
-            display: block;
-            color: #333;
-            font-weight: 600;
-            margin-bottom: 8px;
-            font-size: 14px;
+        h1, h2, h3 { margin-top: 0; }
+        .topbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+        .pill { display: inline-block; padding: 8px 12px; border-radius: 999px; background: #dbeafe; color: #1d4ed8; font-size: 14px; }
+        form { display: grid; gap: 12px; }
+        input, textarea, button { font: inherit; }
+        input, textarea {
+            width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 10px;
         }
-
-        input[type="text"], textarea {
-            width: 100%;
-            padding: 12px 15px;
-            font-size: 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            transition: border-color 0.3s ease, box-shadow 0.3s ease;
-            font-family: inherit;
-            resize: vertical;
-            min-height: 80px;
-        }
-
-        input[type="text"]:focus, textarea:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-
-        input[type="text"]::placeholder, textarea::placeholder {
-            color: #999;
-        }
-
+        textarea { min-height: 100px; resize: vertical; }
         button {
-            width: 100%;
-            padding: 14px 20px;
-            font-size: 16px;
-            font-weight: 600;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            border: none; padding: 12px 14px; border-radius: 10px; cursor: pointer; font-weight: 600;
+            background: linear-gradient(135deg, #2563eb, #7c3aed); color: white;
         }
-
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
-        }
-
-        button:active {
-            transform: translateY(0);
-        }
-
-        button:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .result-container {
-            margin-top: 30px;
-            min-height: 10px;
-        }
-
-        #result {
-            font-size: 18px;
-            font-weight: 600;
-            color: #667eea;
-            padding: 15px;
-            background: rgba(102, 126, 234, 0.1);
-            border-left: 4px solid #667eea;
-            border-radius: 8px;
-            animation: fadeIn 0.4s ease-out;
-            display: none;
-        }
-
-        #result.show {
-            display: block;
-        }
-
-        .confidence {
-            color: #764ba2;
-            margin-top: 12px;
-            font-size: 16px;
-            padding: 12px;
-            background: rgba(118, 75, 162, 0.1);
-            border-left: 4px solid #764ba2;
-            border-radius: 8px;
-            display: none;
-        }
-
-        .confidence.show {
-            display: block;
-            animation: fadeIn 0.4s ease-out;
-        }
-
-        .error {
-            background: rgba(220, 53, 69, 0.1);
-            border-left-color: #dc3545;
-            color: #dc3545;
-        }
-
-        .success {
-            background: rgba(40, 167, 69, 0.1);
-            border-left-color: #28a745;
-            color: #28a745;
-        }
-
-        .loading {
-            display: inline-block;
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #667eea;
-            opacity: 0.6;
-            animation: pulse 1.5s infinite;
-            margin-left: 5px;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 0.6; }
-            50% { opacity: 1; }
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .info-text {
-            font-size: 12px;
-            color: #999;
-            margin-top: 8px;
-            text-align: left;
-        }
-
-        .character-count {
-            font-size: 12px;
-            color: #999;
-            margin-top: 5px;
-            text-align: right;
-        }
+        button.secondary { background: #e5e7eb; color: #111827; }
+        .message { padding: 10px 12px; border-radius: 10px; margin-top: 10px; }
+        .message.error { background: #fee2e2; color: #b91c1c; }
+        .message.success { background: #dcfce7; color: #166534; }
+        .complaint-list { display: grid; gap: 12px; }
+        .complaint-item { border: 1px solid #e5e7eb; border-radius: 12px; padding: 14px; }
+        .status { display: inline-block; padding: 6px 10px; border-radius: 999px; font-size: 12px; font-weight: bold; margin-top: 8px; }
+        .status.Pending { background: #fef3c7; color: #92400e; }
+        .status.Accepted, .status.In\ Progress { background: #dbeafe; color: #1d4ed8; }
+        .status.Resolved { background: #dcfce7; color: #166534; }
+        .status.Rejected { background: #fee2e2; color: #b91c1c; }
     </style>
 </head>
-
 <body>
-
 <div class="container">
-    <div class="box">
-        <h2>ಜನಧ್ವನಿ ಸ್ಪಂದನ</h2>
-
-        <div class="form-group">
-            <label for="text">ನಿಮ್ಮ ದೂರನ್ನು ನಮೂದಿಸಿ</label>
-            <textarea 
-                id="text" 
-                placeholder="ಉದಾಹರಣೆ: ನೀರು ಸಮಸ್ಯೆ ಇದೆ "
-            ></textarea>
-            <div class="character-count"><span id="charCount">0</span>/500 ಅಕ್ಷರಗಳು</div>
-            <div class="info-text">💡 ಸಲಹೆ: ಉತ್ತಮ ವರ್ಗೀಕರಣಕ್ಕಾಗಿ ವಿವರವಾದ ದೂರನ್ನು ಒದಗಿಸಿ</div>
+    <div class="card">
+        <div class="topbar">
+            <div>
+                <h1>ಜನಧ್ವನಿ ಸ್ಪಂದನ</h1>
+                <p>Submit complaints and track their status.</p>
+            </div>
+            <div class="topbar">
+                <div id="userBadge" class="pill">Loading...</div>
+                <button class="secondary" onclick="logoutCitizen()">Logout</button>
+            </div>
         </div>
+    </div>
 
-        <button id="submitBtn" onclick="send()">ದೂರು ಸಲ್ಲಿಸಿ</button>
-
-        <div class="result-container">
-            <div id="result"></div>
-            <div id="confidence" class="confidence"></div>
+    <div class="card">
+        <div class="topbar">
+            <h2>Submit a complaint</h2>
         </div>
+        <form id="complaintForm">
+            <textarea id="complaintText" placeholder="Describe your complaint here" required></textarea>
+            <button type="submit">Submit complaint</button>
+        </form>
+        <div id="complaintMessage"></div>
+    </div>
+
+    <div class="card">
+        <h2>Your complaint status</h2>
+        <div id="complaintsList" class="complaint-list"></div>
     </div>
 </div>
 
 <script>
-const textInput = document.getElementById("text");
-const submitBtn = document.getElementById("submitBtn");
-const resultDiv = document.getElementById("result");
-const confidenceDiv = document.getElementById("confidence");
-const charCountSpan = document.getElementById("charCount");
+const API = 'http://127.0.0.1:5000';
+let currentCitizen = null;
 
-textInput.addEventListener("input", function() {
-    charCountSpan.textContent = this.value.length;
-    if (this.value.length > 500) {
-        this.value = this.value.substring(0, 500);
-        charCountSpan.textContent = 500;
-    }
-});
+function showMessage(el, text, type) {
+    el.innerHTML = `<div class="message ${type}">${text}</div>`;
+}
 
-textInput.addEventListener("keypress", function(event) {
-    if (event.key === "Enter" && event.ctrlKey) {
-        send();
-    }
-});
-
-function send() {
-    let text = textInput.value.trim();
-
-    if (!text) {
-        showError("⚠️ ದಯವಿಟ್ಟು ದೂರನ್ನು ನಮೂದಿಸಿ");
+function loadSession() {
+    const saved = localStorage.getItem('citizenSession');
+    if (!saved) {
+        window.location.href = 'login.html';
         return;
     }
 
-    if (text.length < 5) {
-        showError("⚠️ ದೂರು ಕನಿಷ್ಠ 5 ಅಕ್ಷರಗಳನ್ನು ಹೊಂದಿರಬೇಕು.");
+    try {
+        currentCitizen = JSON.parse(saved);
+        document.getElementById('userBadge').textContent = `Logged in as ${currentCitizen.name}`;
+        loadComplaints();
+    } catch (e) {
+        localStorage.removeItem('citizenSession');
+        window.location.href = 'login.html';
+    }
+}
+
+function logoutCitizen() {
+    currentCitizen = null;
+    localStorage.removeItem('citizenSession');
+    window.location.href = 'login.html';
+}
+
+function loadComplaints() {
+    if (!currentCitizen) return;
+    fetch(`${API}/citizen/${currentCitizen.id}/complaints`)
+        .then(res => res.json())
+        .then(data => {
+            const list = document.getElementById('complaintsList');
+            if (!data.complaints || !data.complaints.length) {
+                list.innerHTML = '<p>No complaints submitted yet.</p>';
+                return;
+            }
+            list.innerHTML = data.complaints.map(item => `
+                <div class="complaint-item">
+                    <strong>${item.complaint_text}</strong>
+                    <div>Department: ${item.predicted_department || '—'}</div>
+                    <div>Status: <span class="status ${item.status || 'Pending'}">${item.status || 'Pending'}</span></div>
+                    <div>Last updated: ${item.updated_at || item.created_at}</div>
+                    ${item.remarks ? `<div>Remarks: ${item.remarks}</div>` : ''}
+                </div>
+            `).join('');
+        })
+        .catch(() => {
+            document.getElementById('complaintsList').innerHTML = '<p>Unable to load complaints right now.</p>';
+        });
+}
+
+document.getElementById('complaintForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const complaintText = document.getElementById('complaintText').value.trim();
+    const messageBox = document.getElementById('complaintMessage');
+
+    if (!currentCitizen) return;
+    if (!complaintText) {
+        showMessage(messageBox, 'Please enter your complaint', 'error');
         return;
     }
 
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = 'Processing<span class="loading"></span>';
-    resultDiv.classList.remove("show", "error", "success");
-    confidenceDiv.classList.remove("show");
-
-    fetch("http://127.0.0.1:5000/predict", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({text: text})
+    fetch(`${API}/predict`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            text: complaintText,
+            citizen_id: currentCitizen.id,
+            citizen_name: currentCitizen.name,
+            phone: currentCitizen.phone || ''
+        })
     })
     .then(res => res.json())
     .then(data => {
         if (data.error) {
-            showError("❌ " + data.error);
-        } else {
-            showSuccess("📌 Category: <strong>" + data.category + "</strong>");
-            confidenceDiv.innerHTML = "✅ Confidence: <strong>" + data.confidence + "%</strong>";
-            confidenceDiv.classList.add("show");
+            showMessage(messageBox, data.error, 'error');
+            return;
         }
+        showMessage(messageBox, `Complaint submitted successfully. Your complaint ID is ${data.complaint_id}.`, 'success');
+        document.getElementById('complaintForm').reset();
+        loadComplaints();
     })
-    .catch(err => {
-        showError("❌ Error connecting to server. Please ensure the backend is running.");
-    })
-    .finally(() => {
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = 'ದೂರು ಸಲ್ಲಿಸಿ';
-    });
-}
+    .catch(() => showMessage(messageBox, 'Unable to connect to the server', 'error'));
+});
 
-function showError(message) {
-    resultDiv.innerHTML = message;
-    resultDiv.classList.add("show", "error");
-    confidenceDiv.classList.remove("show");
-}
-
-function showSuccess(message) {
-    resultDiv.innerHTML = message;
-    resultDiv.classList.add("show", "success");
-}
+loadSession();
 </script>
-
 </body>
 </html>
