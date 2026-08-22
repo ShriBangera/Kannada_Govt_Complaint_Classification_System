@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Citizen Complaint Portal</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: url('bg.png') center/cover no-repeat fixed;
+            color: #1f2937;
+        }
+        .container { max-width: 1100px; margin: 0 auto; padding: 24px; }
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 10px 35px rgba(15, 23, 42, 0.12);
+            margin-bottom: 20px;
+        }
+        h1, h2, h3 { margin-top: 0; }
+        .topbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+        .pill { display: inline-block; padding: 8px 12px; border-radius: 999px; background: #dbeafe; color: #1d4ed8; font-size: 14px; }
+        form { display: grid; gap: 12px; }
+        input, textarea, button { font: inherit; }
+        input, textarea {
+            width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 10px;
+        }
+        textarea { min-height: 100px; resize: vertical; }
+        button {
+            border: none; padding: 12px 14px; border-radius: 10px; cursor: pointer; font-weight: 600;
+            background: linear-gradient(135deg, #2563eb, #7c3aed); color: white;
+        }
+        button.secondary { background: #e5e7eb; color: #111827; }
+        .message { padding: 10px 12px; border-radius: 10px; margin-top: 10px; }
+        .message.error { background: #fee2e2; color: #b91c1c; }
+        .message.success { background: #dcfce7; color: #166534; }
+        .complaint-list { display: grid; gap: 12px; }
+        .complaint-item { border: 1px solid #e5e7eb; border-radius: 12px; padding: 14px; }
+        .status { display: inline-block; padding: 6px 10px; border-radius: 999px; font-size: 12px; font-weight: bold; margin-top: 8px; }
+        .status.Pending { background: #fef3c7; color: #92400e; }
+        .status.Accepted, .status.In\ Progress { background: #dbeafe; color: #1d4ed8; }
+        .status.Resolved { background: #dcfce7; color: #166534; }
+        .status.Rejected { background: #fee2e2; color: #b91c1c; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="card">
+        <div class="topbar">
+            <div>
+                <h1>ಜನಧ್ವನಿ ಸ್ಪಂದನ</h1>
+                <p>Submit complaints and track their status.</p>
+            </div>
+            <div class="topbar">
+                <div id="userBadge" class="pill">Loading...</div>
+                <button class="secondary" onclick="logoutCitizen()">Logout</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="topbar">
+            <h2>Submit a complaint</h2>
+        </div>
+        <form id="complaintForm">
+            <textarea id="complaintText" placeholder="Describe your complaint here" required></textarea>
+            <button type="submit">Submit complaint</button>
+        </form>
+        <div id="complaintMessage"></div>
+    </div>
+
+    <div class="card">
+        <h2>Your complaint status</h2>
+        <div id="complaintsList" class="complaint-list"></div>
+    </div>
+</div>
+
+<script>
+const API = 'http://127.0.0.1:5000';
+let currentCitizen = null;
+
+function showMessage(el, text, type) {
+    el.innerHTML = `<div class="message ${type}">${text}</div>`;
+}
+
+function loadSession() {
+    const saved = localStorage.getItem('citizenSession');
+    if (!saved) {
+        window.location.href = 'login.html';
+        return;
+    }
+
+    try {
+        currentCitizen = JSON.parse(saved);
+        document.getElementById('userBadge').textContent = `Logged in as ${currentCitizen.name}`;
+        loadComplaints();
+    } catch (e) {
+        localStorage.removeItem('citizenSession');
+        window.location.href = 'login.html';
+    }
+}
+
+function logoutCitizen() {
+    currentCitizen = null;
+    localStorage.removeItem('citizenSession');
+    window.location.href = 'login.html';
+}
+
+function loadComplaints() {
+    if (!currentCitizen) return;
+    fetch(`${API}/citizen/${currentCitizen.id}/complaints`)
+        .then(res => res.json())
+        .then(data => {
+            const list = document.getElementById('complaintsList');
+            if (!data.complaints || !data.complaints.length) {
+                list.innerHTML = '<p>No complaints submitted yet.</p>';
+                return;
+            }
+            list.innerHTML = data.complaints.map(item => `
+                <div class="complaint-item">
+                    <strong>${item.complaint_text}</strong>
+                    <div>Department: ${item.predicted_department || '—'}</div>
+                    <div>Status: <span class="status ${item.status || 'Pending'}">${item.status || 'Pending'}</span></div>
+                    <div>Last updated: ${item.updated_at || item.created_at}</div>
+                    ${item.remarks ? `<div>Remarks: ${item.remarks}</div>` : ''}
+                </div>
+            `).join('');
+        })
+        .catch(() => {
+            document.getElementById('complaintsList').innerHTML = '<p>Unable to load complaints right now.</p>';
+        });
+}
+
+document.getElementById('complaintForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const complaintText = document.getElementById('complaintText').value.trim();
+    const messageBox = document.getElementById('complaintMessage');
+
+    if (!currentCitizen) return;
+    if (!complaintText) {
+        showMessage(messageBox, 'Please enter your complaint', 'error');
+        return;
+    }
+
+    fetch(`${API}/predict`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            text: complaintText,
+            citizen_id: currentCitizen.id,
+            citizen_name: currentCitizen.name,
+            phone: currentCitizen.phone || ''
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.error) {
+            showMessage(messageBox, data.error, 'error');
+            return;
+        }
+        showMessage(messageBox, `Complaint submitted successfully. Your complaint ID is ${data.complaint_id}.`, 'success');
+        document.getElementById('complaintForm').reset();
+        loadComplaints();
+    })
+    .catch(() => showMessage(messageBox, 'Unable to connect to the server', 'error'));
+});
+
+loadSession();
+</script>
+</body>
+</html>

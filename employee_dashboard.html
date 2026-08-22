@@ -1,0 +1,324 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Employee Dashboard</title>
+  <style>
+    body { font-family: Arial, sans-serif; background:#f5f7fb; padding:20px }
+    .login, .dashboard { max-width:900px; margin:0 auto; background:white; padding:20px; border-radius:8px; box-shadow:0 6px 20px rgba(0,0,0,0.08)}
+    .cols { display:flex; gap:16px }
+    .col { flex:1 }
+    .card { background:#fff; border:1px solid #eee; padding:12px; border-radius:6px; margin-bottom:12px }
+    .meta { font-size:12px; color:#666 }
+    button { padding:8px 10px; margin-right:6px }
+  </style>
+</head>
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Employee Dashboard</title>
+  <style>
+    :root{--accent:#667eea;--accent-2:#764ba2;--glass-bg:rgba(255,255,255,0.6);--muted:#6b7280}
+    *{box-sizing:border-box}
+    body{font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background:url('bg2.png') center/cover no-repeat fixed; min-height:100vh; margin:0; padding:40px; color:#1f2937}
+    body::before{content:'';position:fixed;inset:0;background:rgba(231, 231, 233, 0.25);pointer-events:none}
+    .wrap{max-width:1100px;margin:0 auto;position:relative;z-index:1}
+    .topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
+    .brand{display:flex;align-items:center;gap:12px}
+    
+    h1{font-size:20px;margin:0;color:var(--accent)}
+
+    .login, .dashboard{background:linear-gradient(180deg, rgba(255,255,255,0.6), rgba(255,255,255,0.5));backdrop-filter: blur(8px);border-radius:14px;padding:18px;box-shadow:0 10px 30px rgba(2,6,23,0.35);border:1px solid rgba(255,255,255,0.4)}
+
+    .login{max-width:480px;margin-left:400px}
+    label{display:block;margin:8px 0 6px;color:var(--muted);font-weight:600}
+    input[type=text], input[type=password], .search{width:100%;padding:10px 12px;border-radius:10px;border:1px solid rgba(15,23,42,0.06);font-size:14px}
+    .controls{display:flex;gap:8px;align-items:center}
+
+    .dashboard .header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+    .filters{display:flex;gap:8px;align-items:center}
+    .pill{padding:8px 12px;border-radius:999px;border:none;background:transparent;color:var(--muted);cursor:pointer;font-weight:600}
+    .pill.active{background:linear-gradient(90deg,var(--accent),var(--accent-2));color:white;box-shadow:0 6px 18px rgba(102,126,234,0.18)}
+
+    .layout{display:grid;grid-template-columns:1fr 360px;gap:18px}
+    .cards{display:flex;flex-direction:column;gap:12px}
+    .card{background:white;border-radius:10px;padding:14px;border-left:4px solid rgba(0,0,0,0.03);box-shadow:0 8px 20px rgba(2,6,23,0.08);cursor:pointer;transition:transform .18s,box-shadow .18s}
+    .card:hover{transform:translateY(-6px);box-shadow:0 18px 40px rgba(2,6,23,0.12)}
+    .meta{font-size:12px;color:var(--muted)}
+    .title{margin-top:8px;font-weight:600}
+    .actions{margin-top:12px;display:flex;gap:8px}
+    .btn{padding:8px 10px;border-radius:8px;border:none;background:linear-gradient(135deg,var(--accent),var(--accent-2));color:white;font-weight:700;cursor:pointer}
+    .btn.ghost{background:transparent;color:var(--accent);box-shadow:none;border:1px solid rgba(102,126,234,0.12)}
+
+    .sidebar .card{position:sticky;top:20px}
+    .badge{display:inline-block;padding:6px 10px;border-radius:999px;font-weight:700;font-size:12px}
+    .badge.Pending{background:rgba(250,204,21,0.12);color:#b45309}
+    .badge.Assigned{background:rgba(59,130,246,0.08);color:#1d4ed8}
+    .badge['In Progress']{background:rgba(99,102,241,0.08);color:#4f46e5}
+    .badge.Resolved{background:rgba(16,185,129,0.08);color:#059669}
+    .badge.Rejected{background:rgba(239,68,68,0.08);color:#dc2626}
+
+    /* Modal */
+    .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:50}
+    .modal.show{display:flex}
+    .modal .box{background:white;border-radius:12px;padding:18px;max-width:720px;width:96%;box-shadow:0 30px 80px rgba(2,6,23,0.6)}
+    .close{background:transparent;border:none;font-size:20px;cursor:pointer}
+
+    @media(max-width:900px){.layout{grid-template-columns:1fr}.sidebar{display:none}}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div id="userMini" style="color:white;display:none"></div>
+  </div>
+
+  <div class="login" id="loginBox">
+    <h2 style="margin:0 0 8px 0;color:var(--accent)">Employee Login</h2>
+    <label>Email</label>
+    <input id="email" type="text" placeholder="you@organization.com">
+    <label>Password</label>
+    <input id="password" type="password" placeholder="password">
+    <div style="margin-top:12px;display:flex;gap:8px;align-items:center;justify-content:center">
+      <button class="btn" onclick="login()">Login</button>
+      <div id="loginError" style="color:#ef4444;font-weight:600"></div>
+    </div>
+    <div style="margin-top:14px;text-align:center;color:var(--muted);font-size:14px">
+      Don't have an account? <a href="#" onclick="toggleRegisterForm(event)" style="color:var(--accent);font-weight:600">Register here</a>
+    </div>
+  </div>
+
+  <div class="login" id="registerBox" style="display:none">
+    <h2 style="margin:0 0 8px 0;color:var(--accent)">Employee Registration</h2>
+    <label>Full Name</label>
+    <input id="regName" type="text" placeholder="Your full name">
+    <label>Email</label>
+    <input id="regEmail" type="email" placeholder="you@organization.com">
+    <label>Department</label>
+    <input id="regDepartment" type="text" placeholder="Water Department">
+    <label>Password</label>
+    <input id="regPassword" type="password" placeholder="Create a password">
+    <label>Confirm Password</label>
+    <input id="regConfirmPassword" type="password" placeholder="Confirm password">
+    <div style="margin-top:12px;display:flex;gap:8px;align-items:center;justify-content:center">
+      <button class="btn" onclick="registerEmployee()">Register</button>
+      <div id="registerError" style="color:#ef4444;font-weight:600"></div>
+    </div>
+    <div style="margin-top:12px;text-align:center;color:var(--muted);font-size:14px">
+      Already registered? <a href="#" onclick="toggleRegisterForm(event)" style="color:var(--accent);font-weight:600">Login here</a>
+    </div>
+    <div id="registerSuccess" style="margin-top:12px;color:#10b981;font-weight:600;text-align:center"></div>
+  </div>
+
+  <div class="dashboard" id="dashboard" style="display:none">
+    <div class="header">
+      <div>
+        <h2 style="margin:0;color:var(--accent)">Welcome, <span id="empName"></span></h2>
+        <div style="color:var(--muted);font-size:13px" id="empDept"></div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center">
+        <input class="search" id="search" placeholder="Search complaints...">
+      </div>
+    </div>
+
+    <div class="filters" style="margin-bottom:12px">
+      <button class="pill active" data-status="All" onclick="setStatus(this)">All</button>
+      <button class="pill" data-status="Pending" onclick="setStatus(this)">Pending</button>
+      <button class="pill" data-status="Assigned" onclick="setStatus(this)">Assigned</button>
+      <button class="pill" data-status="In Progress" onclick="setStatus(this)">In Progress</button>
+      <button class="pill" data-status="Resolved" onclick="setStatus(this)">Resolved</button>
+      <button class="pill" data-status="Rejected" onclick="setStatus(this)">Rejected</button>
+    </div>
+
+    <div class="layout">
+      <div>
+        <div class="cards" id="complaintsList"></div>
+      </div>
+      <div class="sidebar">
+        <div class="card">
+          <h3 style="margin:0;color:var(--accent)">Overview</h3>
+          <div style="margin-top:8px;color:var(--muted);font-size:14px">Use the filters and search to find complaints quickly. Click a card to view details.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal" class="modal" onclick="closeModal(event)">
+    <div class="box" role="dialog" aria-modal="true">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <h3 id="mdTitle" style="margin:0;color:var(--accent)"></h3>
+        <button class="close" onclick="closeModal(event)">&times;</button>
+      </div>
+      <div id="mdBody"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = 'http://127.0.0.1:5000';
+let EMP = null; let currentStatus = 'All'; let complaintsCache = [];
+
+function toggleRegisterForm(event){
+  event.preventDefault();
+  const loginBox = document.getElementById('loginBox');
+  const registerBox = document.getElementById('registerBox');
+  
+  if(loginBox.style.display === 'none'){
+    loginBox.style.display = 'block';
+    registerBox.style.display = 'none';
+    // Clear register form
+    document.getElementById('regName').value = '';
+    document.getElementById('regEmail').value = '';
+    document.getElementById('regDepartment').value = '';
+    document.getElementById('regPassword').value = '';
+    document.getElementById('regConfirmPassword').value = '';
+    document.getElementById('registerError').textContent = '';
+    document.getElementById('registerSuccess').textContent = '';
+  } else {
+    loginBox.style.display = 'none';
+    registerBox.style.display = 'block';
+    // Clear login form
+    document.getElementById('email').value = '';
+    document.getElementById('password').value = '';
+    document.getElementById('loginError').textContent = '';
+  }
+}
+
+function registerEmployee(){
+  const name = document.getElementById('regName').value.trim();
+  const email = document.getElementById('regEmail').value.trim();
+  const department = document.getElementById('regDepartment').value.trim();
+  const password = document.getElementById('regPassword').value;
+  const confirmPassword = document.getElementById('regConfirmPassword').value;
+
+  const errorEl = document.getElementById('registerError');
+  const successEl = document.getElementById('registerSuccess');
+  errorEl.textContent = '';
+  successEl.textContent = '';
+
+  if(!name || !email || !department || !password || !confirmPassword){
+    errorEl.textContent = 'Please fill all fields.';
+    return;
+  }
+
+  if(password !== confirmPassword){
+    errorEl.textContent = 'Passwords do not match.';
+    return;
+  }
+
+  if(password.length < 6){
+    errorEl.textContent = 'Password must be at least 6 characters.';
+    return;
+  }
+
+  fetch(API + '/employee/register', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, email, department, password })
+  })
+  .then(res => res.json().then(data => ({status: res.status, body: data})))
+  .then(result => {
+    if(result.status !== 201){
+      errorEl.textContent = result.body.error || 'Registration failed.';
+      return;
+    }
+    successEl.textContent = 'Registration successful! You can now login.';
+    // Clear form
+    document.getElementById('regName').value = '';
+    document.getElementById('regEmail').value = '';
+    document.getElementById('regDepartment').value = '';
+    document.getElementById('regPassword').value = '';
+    document.getElementById('regConfirmPassword').value = '';
+    // Switch back to login after 2 seconds
+    setTimeout(()=>{ toggleRegisterForm({preventDefault:()=>{}}); }, 2000);
+  })
+  .catch(() => {
+    errorEl.textContent = 'Unable to connect to server.';
+  });
+}
+
+function login(){
+  document.getElementById('loginError').textContent = '';
+  const email = document.getElementById('email').value;
+  const password = document.getElementById('password').value;
+  fetch(API + '/employee/login', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({email,password})})
+    .then(r=>r.json()).then(data=>{
+      if(data.error){ document.getElementById('loginError').textContent = data.error; return; }
+      EMP = data; document.getElementById('empName').textContent = data.name; document.getElementById('empDept').textContent = data.department;
+      document.getElementById('loginBox').style.display='none'; document.getElementById('registerBox').style.display='none'; document.getElementById('dashboard').style.display='block';
+      loadComplaints('All');
+    }).catch(()=>{ document.getElementById('loginError').textContent = 'Server error'; });
+}
+
+function setStatus(el){
+  document.querySelectorAll('.pill').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  currentStatus = el.dataset.status;
+  renderComplaints();
+}
+
+document.getElementById('search').addEventListener('input',()=>renderComplaints());
+
+function loadComplaints(status){
+  fetch(API + '/employee/' + (EMP?EMP.id:'') + '/complaints' + (status && status!=='All'?('?status='+encodeURIComponent(status)):''))
+    .then(r=>r.json()).then(data=>{ complaintsCache = data.complaints||[]; renderComplaints(); })
+    .catch(()=>{ complaintsCache = []; renderComplaints(); });
+}
+
+function renderComplaints(){
+  const q = document.getElementById('search').value.toLowerCase();
+  const list = document.getElementById('complaintsList'); list.innerHTML='';
+  const items = complaintsCache.filter(c=>{
+    if(currentStatus && currentStatus!=='All' && c.status !== currentStatus) return false;
+    if(!q) return true;
+    return (c.complaint_text||'').toLowerCase().includes(q) || (c.citizen_name||'').toLowerCase().includes(q) || (String(c.id)).includes(q);
+  });
+  if(items.length===0){ list.innerHTML = '<div class="card" style="text-align:center;color:var(--muted)">No complaints found</div>'; return; }
+  items.forEach(c=>{
+    const div = document.createElement('div'); div.className='card';
+    const badge = `<span class="badge ${c.status}">${c.status}</span>`;
+    div.innerHTML = `<div class="meta">#${c.id} • ${c.citizen_name || 'Anonymous'} • ${c.predicted_department || ''} ${badge}</div>
+                     <div class="title">${escapeHtml(truncate(c.complaint_text,140))}</div>
+                     <div class="actions">${actionButtons(c)}</div>`;
+    div.addEventListener('click', ()=> openModal(c));
+    list.appendChild(div);
+  });
+}
+
+function actionButtons(c){
+  // Small buttons; stopPropagation inside
+  return `<button class="btn ghost" onclick="action(event, ${c.id}, 'accept')">Accept</button>` +
+         `<button class="btn ghost" onclick="action(event, ${c.id}, 'start')">Start</button>` +
+         `<button class="btn ghost" onclick="action(event, ${c.id}, 'resolve')">Resolve</button>` +
+         `<button class="btn ghost" onclick="action(event, ${c.id}, 'reject')">Reject</button>`;
+}
+
+function action(e, id, act){
+  e.stopPropagation();
+  if(!EMP) return alert('Login required');
+  fetch(API + '/complaint/' + id + '/action', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({action: act, employee_id: EMP.id})})
+    .then(r=>r.json()).then(res=>{ if(res && res.ok){ loadComplaints(currentStatus); } else alert('Action failed'); })
+    .catch(()=> alert('Server error'));
+}
+
+function openModal(c){ document.getElementById('mdTitle').textContent = 'Complaint #' + c.id; document.getElementById('mdBody').innerHTML = `
+  <div style="color:var(--muted);margin-bottom:8px">Citizen: ${c.citizen_name || 'Anonymous'}</div>
+  <div style="margin-bottom:12px">${escapeHtml(c.complaint_text)}</div>
+  <div style="display:flex;gap:12px;align-items:center"><strong>Confidence:</strong> ${c.confidence || 'N/A'}</div>
+  <div style="margin-top:10px"><strong>Status:</strong> <span class="badge ${c.status}">${c.status}</span></div>
+  <div style="margin-top:12px">` + actionButtons(c) + `</div>`;
+  document.getElementById('modal').classList.add('show');
+}
+
+function closeModal(e){ if(e.target.id==='modal' || e.target.classList.contains('close')){ document.getElementById('modal').classList.remove('show'); } }
+
+function truncate(s,n){ if(!s) return ''; return s.length>n? s.slice(0,n-1)+'…':s }
+function escapeHtml(unsafe){ return String(unsafe||'').replace(/[&<>"']/g, function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]; }); }
+
+// optional: auto-refresh every 30s while dashboard visible
+setInterval(()=>{ if(document.getElementById('dashboard').style.display==='block' && EMP) loadComplaints(currentStatus); },30000);
+</script>
+</body>
+</html>

@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login - Complaint Portal</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: url('bg.png') center/cover no-repeat fixed;
+            color: #111827;
+        }
+        .container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+        .card {
+            width: 100%;
+            max-width: 460px;
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 12px 35px rgba(15, 23, 42, 0.12);
+        }
+        h1, h2 { margin-top: 0; }
+        form { display: grid; gap: 12px; }
+        input, button { font: inherit; }
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 10px;
+            box-sizing: border-box;
+        }
+        button {
+            border: none;
+            padding: 12px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            background: linear-gradient(135deg, #2563eb, #7c3aed);
+            color: white;
+        }
+        button.secondary {
+            background: #e5e7eb;
+            color: #111827;
+        }
+        .toggle-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 12px 0;
+            font-size: 14px;
+        }
+        .hidden { display: none; }
+        .message { margin-top: 10px; padding: 10px 12px; border-radius: 10px; }
+        .message.error { background: #fee2e2; color: #b91c1c; }
+        .message.success { background: #dcfce7; color: #166534; }
+        a { color: #2563eb; text-decoration: none; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="card">
+        <h1>Citizen Login</h1>
+        <p>Use this page to log in as a citizen or switch to employee login.</p>
+
+        <div id="citizenLoginSection">
+            <h2>Citizen Login</h2>
+            <form id="citizenLoginForm">
+                <input id="citizenEmail" type="email" placeholder="Email" required />
+                <input id="citizenPassword" type="password" placeholder="Password" required />
+                <button type="submit">Login as Citizen</button>
+            </form>
+        </div>
+
+        <div class="toggle-row">
+            <span>Need an account?</span>
+            <a href="register.html">Create citizen account</a>
+        </div>
+
+        <button id="switchEmployeeBtn" class="secondary" type="button" onclick="window.location.href='employee_dashboard.html'">Login as Employee</button>
+
+        <div id="messageBox"></div>
+    </div>
+</div>
+
+<script>
+const API = 'http://127.0.0.1:5000';
+const messageBox = document.getElementById('messageBox');
+
+function showMessage(text, type) {
+    messageBox.innerHTML = `<div class="message ${type}">${text}</div>`;
+}
+
+document.getElementById('citizenLoginForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    const email = document.getElementById('citizenEmail').value.trim();
+    const password = document.getElementById('citizenPassword').value;
+
+    fetch(`${API}/citizen/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+    })
+    .then(res => res.json().then(data => ({ status: res.status, data })))
+    .then(result => {
+        if (result.status !== 200) {
+            showMessage(result.data.error || 'Citizen login failed', 'error');
+            return;
+        }
+        localStorage.setItem('citizenSession', JSON.stringify(result.data));
+        showMessage('Citizen login successful. You can now use the complaint portal.', 'success');
+        window.location.replace('index.html');
+    })
+    .catch(() => showMessage('Unable to connect to the server', 'error'));
+});
+
+</script>
+</body>
+</html>
