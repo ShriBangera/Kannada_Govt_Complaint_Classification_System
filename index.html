@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Citizen Complaint Portal</title>
+    <title>ನಾಗರಿಕ ದೂರುಗಳ ಪೋರ್ಟಲ್</title>
     <style>
         * { box-sizing: border-box; }
         body {
@@ -52,28 +52,28 @@
         <div class="topbar">
             <div>
                 <h1>ಜನಧ್ವನಿ ಸ್ಪಂದನ</h1>
-                <p>Submit complaints and track their status.</p>
+                <p>ದೂರುಗಳನ್ನು ಸಲ್ಲಿಸಿ ಮತ್ತು ಅವುಗಳ ಸ್ಥಿತಿಯನ್ನು ಪರಿಶೀಲಿಸಿ.</p>
             </div>
             <div class="topbar">
-                <div id="userBadge" class="pill">Loading...</div>
-                <button class="secondary" onclick="logoutCitizen()">Logout</button>
+                <div id="userBadge" class="pill">ಲೋಡ್ ಆಗುತ್ತಿದೆ...</div>
+                <button class="secondary" onclick="logoutCitizen()">ನಿರ್ಗಮಿಸು</button>
             </div>
         </div>
     </div>
 
     <div class="card">
         <div class="topbar">
-            <h2>Submit a complaint</h2>
+            <h2>ದೂರು ಸಲ್ಲಿಸಿ</h2>
         </div>
         <form id="complaintForm">
             <textarea id="complaintText" placeholder="Describe your complaint here" required></textarea>
-            <button type="submit">Submit complaint</button>
+            <button type="submit">ದೂರು ಸಲ್ಲಿಸಿ</button>
         </form>
         <div id="complaintMessage"></div>
     </div>
 
     <div class="card">
-        <h2>Your complaint status</h2>
+        <h2>ನಿಮ್ಮ ದೂರಿನ ಸ್ಥಿತಿ</h2>
         <div id="complaintsList" class="complaint-list"></div>
     </div>
 </div>
@@ -116,7 +116,7 @@ function loadComplaints() {
         .then(data => {
             const list = document.getElementById('complaintsList');
             if (!data.complaints || !data.complaints.length) {
-                list.innerHTML = '<p>No complaints submitted yet.</p>';
+                list.innerHTML = '<p>ಇನ್ನೂ ಯಾವುದೇ ದೂರುಗಳನ್ನು ಸಲ್ಲಿಸಲಾಗಿಲ್ಲ.</p>';
                 return;
             }
             list.innerHTML = data.complaints.map(item => `
@@ -130,7 +130,7 @@ function loadComplaints() {
             `).join('');
         })
         .catch(() => {
-            document.getElementById('complaintsList').innerHTML = '<p>Unable to load complaints right now.</p>';
+            document.getElementById('complaintsList').innerHTML = '<p>ಈಗ ದೂರುಗಳನ್ನು ಲೋಡ್ ಮಾಡಲು ಸಾಧ್ಯವಾಗುತ್ತಿಲ್ಲ.</p>';
         });
 }
 
@@ -141,7 +141,7 @@ document.getElementById('complaintForm').addEventListener('submit', function(e) 
 
     if (!currentCitizen) return;
     if (!complaintText) {
-        showMessage(messageBox, 'Please enter your complaint', 'error');
+        showMessage(messageBox, 'ದಯವಿಟ್ಟು ನಿಮ್ಮ ದೂರು ಸಲ್ಲಿಸಿ', 'error');
         return;
     }
 
@@ -161,11 +161,11 @@ document.getElementById('complaintForm').addEventListener('submit', function(e) 
             showMessage(messageBox, data.error, 'error');
             return;
         }
-        showMessage(messageBox, `Complaint submitted successfully. Your complaint ID is ${data.complaint_id}.`, 'success');
+        showMessage(messageBox, `ದೂರು ಯಶಸ್ವಿಯಾಗಿ ಸಲ್ಲಿಸಲಾಗಿದೆ. ನಿಮ್ಮ ದೂರು ID ${data.complaint_id}.`, 'success');
         document.getElementById('complaintForm').reset();
         loadComplaints();
     })
-    .catch(() => showMessage(messageBox, 'Unable to connect to the server', 'error'));
+    .catch(() => showMessage(messageBox, 'ಸರ್ವರ್‌ಗೆ ಸಂಪರ್ಕಿಸಲು ಸಾಧ್ಯವಾಗುತ್ತಿಲ್ಲ', 'error'));
 });
 
 loadSession();
