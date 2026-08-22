@@ -288,7 +288,7 @@ The evaluation script uses an **80/20 train-test split**, `random_state=42`, and
 ## 📁 Project Structure
 
 ```text
-Kannada-Government-Complaint-System/
+Janadhwani_Spandhana/
 │
 ├── app.py
 ├── database.py
@@ -342,8 +342,8 @@ The project also contains an installation script for the MySQL connector.
 ### Step 1: Clone the Repository
 
 ```bash
-git clone https://github.com/your-username/kannada-government-complaint-system.git
-cd kannada-government-complaint-system
+git clone https://github.com/your-username/Janadhwani_Spandhana.git
+cd Janadhwani_Spandhana
 ```
 
 ### Step 2: Install Dependencies
